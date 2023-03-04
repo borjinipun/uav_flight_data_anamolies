@@ -1,0 +1,38 @@
+import pandas as pd
+import networkx as nx
+import matplotlib.pyplot as plt
+
+# Load data for the supply chain
+components = pd.read_csv('components.csv')
+suppliers = pd.read_csv('suppliers.csv')
+production = pd.read_csv('production.csv')
+
+# Create a directed graph to model the supply chain
+G = nx.DiGraph()
+
+# Add nodes for the components and suppliers
+for i, row in components.iterrows():
+    G.add_node(row['component'], demand=row['demand'])
+
+for i, row in suppliers.iterrows():
+    G.add_node(row['supplier'], supply=row['supply'])
+
+# Add edges for the production process
+for i, row in production.iterrows():
+    G.add_edge(row['supplier'], row['component'], weight=row['cost'])
+    G.add_edge(row['component'], row['assembly'], weight=row['assembly_cost'])
+
+# Compute the minimum-cost flow through the network
+flow_dict = nx.min_cost_flow(G)
+
+# Print the results of the optimization
+for node in flow_dict:
+    for neighbor in flow_dict[node]:
+        if flow_dict[node][neighbor] > 0:
+            print(f"Ship {flow_dict[node][neighbor]} units of {neighbor} from {node}")
+
+# Draw the supply chain graph
+pos = nx.spring_layout(G, k=0.3, seed=42)
+nx.draw_networkx(G, pos=pos, with_labels=True)
+nx.draw_networkx_edge_labels(G, pos=pos, edge_labels=nx.get_edge_attributes(G, 'weight'))
+plt.show()
